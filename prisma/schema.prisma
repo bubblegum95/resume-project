@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Users {
+  userId Int @id @default(autoincrement()) @map("userId")
+  email String @unique @map("email")
+  password String @map("password")
+
+  userInfos UserInfos?
+  resumes Resumes[]
+
+  @@map("Users")
+}
+
+model UserInfos {
+  userInfoId Int @id @default(autoincrement()) @map("userInfoId")
+  userId Int @unique @map("userId") 
+  name String @map("name")
+  gender String? @map("gender")
+  age Int? @map("age")
+  
+  user Users @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  resumes Resumes[]
+  
+  @@map("UserInfos")
+}
+
+
+model Resumes{
+  resumeId Int @id @default(autoincrement()) @map("resumeId")
+  userId Int @map("userId")
+  userInfoId Int @map("userInfoId")
+  title String @map("title")
+  selfIntroduction String @map("selfIntroduction") @db.Text
+  status String @default("apply") @map("status")
+  createdAt DateTime @default(now()) @map("createdAt")
+
+  user Users @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  userInfo UserInfos @relation(fields: [userInfoId], references: [userInfoId], onDelete: Cascade)
+  
+  @@map("Resumes")
+}
