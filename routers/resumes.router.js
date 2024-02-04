@@ -89,6 +89,7 @@ router.get('/', async(req, res) =>{
   return res.json({data: resume});
 })
 
+// 이력서 작성 
 router.post('/', jwtValidate, async(req, res)=>{
   const user = res.locals.user;
   
@@ -176,7 +177,7 @@ router.patch('/:resumeId', jwtValidate, async (req, res)=>{
   if(resume.userId !== user.userId) {
     return res.status(400).json({
       success: false, 
-      message: '올바르지 않은 요청입니다.'
+      message: '수정 권한이 없습니다.'
     })
   }
 
@@ -192,6 +193,48 @@ router.patch('/:resumeId', jwtValidate, async (req, res)=>{
   })
 
   return res.status(201).end();
+})
+
+// 이력서 삭제 
+router.delete('/:resumeId', jwtValidate, async(req, res)=>{
+  const user = res.locals.user; 
+  const resumeId = req.params.resumeId;
+
+  if(!resumeId) {
+    return res.status(400).json({
+      success: false, 
+      message: 'resumeId는 필수입니다.'
+    })
+  }
+
+  const resume = await prisma.resumes.findFirst({
+    where: {
+      resumeId: Number(resumeId),
+    }
+  });
+
+  if(!resume) {
+    return res.status(400).json({
+      success: false, 
+      message: '존재하지 않는 이력서입니다.'
+    })
+  }
+
+  if(resume.userId !== user.userId) {
+    return res.status(400).json({
+      success: false, 
+      message: '삭제 권한이 없습니다.'
+    })
+  }
+
+  await prisma.resumes.delete({
+    where: {
+      resumeId: Number(resumeId),
+    }, 
+  })
+
+  return res.status(201).end();
+
 })
 
 export default router;
