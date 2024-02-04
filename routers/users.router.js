@@ -1,5 +1,5 @@
 import express from 'express';
-import AuthMiddleware from '../middlewares/need-sign-in.middleware.js'
+import jwtValidate from '../middlewares/need-sign-in.middleware.js'
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
@@ -10,6 +10,8 @@ dotenv.config();
 const prisma = new PrismaClient();
 const router = express.Router(); // 라우터 생성
 
+
+// 회원가입
 router.post('/sign-up', async (req, res) => {
   const {email, password, passwordConfirm, name} = req.body;
   if (!email) {
@@ -56,6 +58,7 @@ router.post('/sign-up', async (req, res) => {
   })
 })
 
+// 로그인
 router.post('/sign-in', async (req, res) => {
   const {email, password} = req.body;
   if (!email) {
@@ -80,6 +83,16 @@ router.post('/sign-in', async (req, res) => {
   const accessToken = jwt.sign({userId: user.userId}, 'resume@@', {expiresIn: '12h'})
   return res.json({
     accessToken,
+  })
+})
+
+// 내정보 조회
+router.get('/me', jwtValidate, (req, res)=>{
+  const user = res.locals.user;
+
+  return res.json({
+    email: user.email,
+    name: user.name,
   })
 })
 
