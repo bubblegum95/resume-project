@@ -82,6 +82,10 @@ router.get('/', async(req, res) =>{
     delete resumes.user;
   });
 
+  if(!resume) {
+    return res.json({data: {}});
+  }
+
   return res.json({data: resume});
 })
 export default router;
