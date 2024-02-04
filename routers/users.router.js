@@ -8,7 +8,7 @@ import { Prisma } from "@prisma/client";
 
 dotenv.config();
 
-const usersRouter = express.Router(); // 라우터 생성
+const router = express.Router(); // 라우터 생성
 
 // 회원가입
 usersRouter.post('/sign-up', async(req, res, next)=>{

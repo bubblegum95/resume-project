@@ -2,7 +2,7 @@ import express from 'express';
 import {Prisma} from '../models/index.js'
 import AuthMiddleware from '../middlewares/need-sign-in.middleware.js'
 
-const docRouter = express.Router();
+const router = express.Router();
 
 //이력서 생성
 docRouter.post('/resumes', AuthMiddleware, async (req, res) => {
