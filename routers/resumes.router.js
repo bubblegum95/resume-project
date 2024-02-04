@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import {PrismaClient} from '@prisma/client'; 
 
 const router = express.Router();
-const prisma = PrismaClient();
+const prisma = new PrismaClient();
 
 // 이력서 목록 조회
 router.get('/', async(req, res) =>{
@@ -43,7 +43,7 @@ router.get('/', async(req, res) =>{
   })
   
   resumes.forEach(resumes => {
-    resumes.name = resumes.users.name; 
+    resumes.name = resumes.user.name; 
     delete resumes.user;
   });
 
@@ -78,7 +78,7 @@ router.get('/', async(req, res) =>{
   })
   
   resume.forEach(resumes => {
-    resumes.name = resumes.users.name; 
+    resumes.name = resumes.user.name; 
     delete resumes.user;
   });
 
@@ -107,7 +107,7 @@ router.post('/', jwtValidate, async(req, res)=>{
     })
   }
 
-  await prisma.resume.create({
+  await prisma.resumes.create({
     data: {
       title, 
       content, 
@@ -116,8 +116,82 @@ router.post('/', jwtValidate, async(req, res)=>{
     }
   })
 
-  return res.status(201).json({});
+  return res.status(201).end();
 })
 
+// 이력서 수정 
+router.patch('/:resumeId', jwtValidate, async (req, res)=>{
+  const user = res.locals.user; 
+  const resumeId = req.params.resumeId; 
+  const {title, content, status} = req.body;
+
+  if(!resumeId) {
+    return res.status(400).json({
+      success: false, 
+      message: 'resumeId는 필수입니다.'
+    })
+  }
+
+  if(!title) {
+    return res.status(400).json({
+      success: false, 
+      message: '이력서 제목은 필수입니다.'
+    })
+  }
+
+  if(!content) {
+    return res.status(400).json({
+      success: false, 
+      message: '이력서의 자기소개는 필수입니다.'
+    })
+  }
+
+  if(!status) {
+    return res.status(400).json({
+      success: false, 
+      message: '이력서 상태는 필수입니다.'
+    })
+  }
+
+  if(['APPLY', 'DROP', 'PASS', 'INTERVIEW1', 'INTERVIEW2', 'FINAL_PASS'].includes(status)) {
+    return res.status(400).json({
+      success: false, 
+      message: '이력서 상태는 필수입니다.'
+    })
+  }
+
+  const resume = await prisma.resumes.findFirst({
+    where: {
+      resumeId: Number(resumeId),
+    }
+  });
+
+  if(!resume) {
+    return res.status(400).json({
+      success: false, 
+      message: '존재하지 않는 이력서입니다.'
+    })
+  }
+
+  if(resume.userId !== user.userId) {
+    return res.status(400).json({
+      success: false, 
+      message: '올바르지 않은 요청입니다.'
+    })
+  }
+
+  await prisma.resumes.update({
+    where: {
+      resumeId: Number(resumeId), 
+    }, 
+    data: {
+      title, 
+      content, 
+      status,
+    }
+  })
+
+  return res.status(201).end();
+})
 
 export default router;

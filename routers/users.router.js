@@ -1,6 +1,5 @@
 import express from 'express';
 import jwtValidate from '../middlewares/need-sign-in.middleware.js'
-import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import {PrismaClient} from '@prisma/client'; 
