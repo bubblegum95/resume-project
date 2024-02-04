@@ -1,40 +1,50 @@
-import jwt from "jsonwebtoken";
-import { Prisma } from "../models/index.js";
+import jwt from 'jsonwebtoken';
+import {PrismaClient} from '@prisma/client'; 
 
-export default async function (req, res, next) {
+const prisma = new PrismaClient();
+
+const jwtValidate = async (req, res, next) => {
   try {
-    const { authorization } = req.cookies;
-    if (!authorization) throw new Error("토큰이 존재하지 않습니다.");
-
-    const [tokenType, token] = authorization.split(" ");
-    if (tokenType !== "Bearer") throw new Error("토큰 타입이 일치하지 않습니다.");
-
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-    const { userId } = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await Prisma.users.findFirst({
-      where: { userId: +userId },
-    });
-
-    if (!user) {
-      res.clearCookie("authorization");
-      throw new Error("토큰 사용자가 존재하지 않습니다.");
+    // 헤더에서 accessToken 가져오기
+    const accessToken = req.headers.authorization;
+    if(!accessToken) {
+      throw new Error('인증 정보가 올바르지 않습니다.')
     }
 
-    req.user = user;
+    // accessToken의 인증방식이 올바른가
+    const {tokenType, tokenValue} = authorization.split(" ");
+    if(tokenType !== 'Bearer') {
+      throw new Error('인증 정보가 올바르지 않습니다.')
+    }
+
+    if(!tokenValue) {
+      throw new Error('인증 정보가 올바르지 않습니다.')
+    }
+
+    // 12h이 남아있는가
+    const token = jwt.verify(tokenValue, 'resume@@');
+
+    // accessToken 안에 userId가 있는가?
+    if(!token.userId) {
+      throw new Error('인증 정보가 올바르지 않습니다.')
+    }
+
+    const user = await prisma.users.findFirst({
+      where: {
+        userId: token.userId
+      }
+    })
+
+    // user 정보 담기
+    res.locals.user = {};
 
     next();
   } catch (error) {
-    res.clearCookie("authorization");
-    // 토큰이 만료되었거나, 조작되었을 때, 에러 메시지를 다르게 출력합니다.
-    switch (error.name) {
-      case "TokenExpiredError":
-        return res.status(401).json({ message: "토큰이 만료되었습니다." });
-      case "JsonWebTokenError":
-        return res.status(401).json({ message: "토큰이 조작되었습니다." });
-      default:
-        return res
-          .status(401)
-          .json({ message: error.message ?? "비정상적인 요청입니다." });
-    }
+    return res.status(400).json({
+      success: false, 
+      message: error.message,
+    })
   }
 }
+
+export default jwtValidate;
