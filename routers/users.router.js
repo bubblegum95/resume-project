@@ -3,26 +3,29 @@ import jwtValidate from '../middlewares/need-sign-in.middleware.js'
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import {PrismaClient} from '@prisma/client';
-import cryptoJS from 'crypto-js';
+import sha256 from 'crypto-js/sha256.js';
 
 dotenv.config();
 
 const prisma = new PrismaClient();
 const router = express.Router();
-const sha256 = cryptoJS.sha256;
 
 // 회원가입
 router.post('/sign-up', async (req, res) => {
   const {email, clientId, password, passwordConfirm, name, grade} = req.body;
   // 권한 부여
-  if(grade && ['NORMAL', 'ADMIN'].includes(grade)) {
+  if(grade && !['NORMAL', 'ADMIN'].includes(grade)) {
     return res.status(400).json({success: false, message: "등급이 올바르지 않습니다."})
+  }
+
+  if (!name) {
+    return res.status(400).json({success: false, message: "이름은 필수입니다."})
   }
 
   // kakao auth을 하지 않은 경우
   if(!clientId){
     if (!email) {
-      return res.status(400).json({success: false, message: "이메일을 필수입니다."})
+      return res.status(400).json({success: false, message: "이메일은 필수입니다."})
     }
   
     if (!password) {
@@ -39,35 +42,8 @@ router.post('/sign-up', async (req, res) => {
     
     if (password !== passwordConfirm) {
       return res.status(400).json({success: false, message: "비밀번호가 일치하지 않습니다."})
-    }
-  }
-  
-  
-  if (!name) {
-    return res.status(400).json({success: false, message: "이름은 필수입니다."})
-  }
-  
-  if (clientId){
-    // clientId (kakao)로 회원가입
-    const user = await prisma.users.findFirst({
-      where: {
-        clientId,
-      }
-    })
-
-    if(user){
-      return res.status(400).json({success: false, message: "이미 가입된 사용자입니다."})
-    }
-
-    await prisma.users.create({
-      data: {
-        clientId,
-        name,
-        grade,
-      }
-    })
-  } else {
-    //email로 회원가입
+    } 
+    
     const user = await prisma.users.findFirst({
       where: {
         email,
@@ -82,6 +58,25 @@ router.post('/sign-up', async (req, res) => {
       data: {
         email,
         password: sha256(password).toString(), 
+        name,
+        grade,
+      }
+    })
+  } else {
+    // clientId (kakao)로 회원가입
+    const user = await prisma.users.findFirst({
+      where: {
+        clientId,
+      }
+    })
+
+    if(user){
+      return res.status(400).json({success: false, message: "이미 가입된 사용자입니다."})
+    }
+
+    await prisma.users.create({
+      data: {
+        clientId,
         name,
         grade,
       }
@@ -137,6 +132,7 @@ router.post('/sign-in', async (req, res) => {
     accessToken,
     refreshToken,
   })
+  
 })
 
 // 내정보 조회
