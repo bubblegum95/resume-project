@@ -130,10 +130,12 @@ router.post('/sign-in', async (req, res) => {
       return res.status(401).json({success: false, message: "이메일 또는 비밀번호가 정확하지 않습니다."})
     }
   }
-  
-  const accessToken = jwt.sign({userId: user.userId}, 'resume@@', {expiresIn: '12h'})
+  // accessToken 발급
+  const accessToken = jwt.sign({userId: user.userId}, process.env.ACCESS_TOKEN_KEY, {expiresIn: '12h'});
+  const refreshToken = jwt.sign({userId: user.userId}, process.env.REFRESH_TOKEN_KEY, {expiresIn: '7d'});
   return res.json({
     accessToken,
+    refreshToken,
   })
 })
 
