@@ -10,7 +10,7 @@ router.get('/', async(req, res) =>{
   const orderKey = req.query.orderKey ?? 'resumeId';
   const orderValue = req.query.orderValue ?? 'desc';
 
-  if(!['resumeId', 'status'].includes(orderKey.toLowerCase())) {
+  if(!['resumeId', 'status'].includes(orderKey)) {
     return res.status(400).json({
       success: false, 
       message: "orderKey는 'resumeId' 또는 'status' 입니다."
@@ -33,7 +33,8 @@ router.get('/', async(req, res) =>{
         select: {
           name: true,
         }
-      }
+      },
+      createdAt: true,
     },
     orderBy: {
       [orderKey]: orderValue.toLowerCase(),
@@ -49,7 +50,7 @@ router.get('/', async(req, res) =>{
 })
 
 // 이력서 단건 조회
-router.get('/', async(req, res) =>{
+router.get('/:resumeId', async(req, res) =>{
   const resumeId = req.params.resumeId;
   if(!resumeId) {
     return res.status(400).json({
@@ -75,10 +76,8 @@ router.get('/', async(req, res) =>{
     }
   })
   
-  resume.forEach(resumes => {
-    resumes.name = resumes.user.name; 
-    delete resumes.user;
-  });
+  resume.name = resume.user.name; 
+  delete resume.user;
 
   if(!resume) {
     return res.json({data: {}});
@@ -152,10 +151,17 @@ router.patch('/:resumeId', jwtValidate, async (req, res)=>{
     })
   }
 
-  if(['APPLY', 'DROP', 'PASS', 'INTERVIEW1', 'INTERVIEW2', 'FINAL_PASS'].includes(status)) {
+  if(user.grade !== 'NORMAL') {
     return res.status(400).json({
       success: false, 
-      message: '이력서 상태는 필수입니다.'
+      message: '수정 권한이 없습니다.'
+    })
+  }
+
+  if(!['APPLY', 'DROP', 'PASS', 'INTERVIEW1', 'INTERVIEW2', 'FINAL_PASS'].includes(status)) {
+    return res.status(400).json({
+      success: false, 
+      message: '이력서 상태가 유효하지 않습니다.'
     })
   }
 
@@ -172,13 +178,6 @@ router.patch('/:resumeId', jwtValidate, async (req, res)=>{
     })
   }
 
-  if(user.grade === 'NORMAL' && resume.userId !== user.userId) {
-    return res.status(400).json({
-      success: false, 
-      message: '수정 권한이 없습니다.'
-    })
-  }
-
   await prisma.resumes.update({
     where: {
       resumeId: Number(resumeId), 
@@ -190,7 +189,7 @@ router.patch('/:resumeId', jwtValidate, async (req, res)=>{
     }
   })
 
-  return res.status(201).end();
+  return res.status(201).json({message: "이력서가 성공적으로 수정되었습니다."});
 })
 
 // 이력서 삭제 
@@ -231,7 +230,7 @@ router.delete('/:resumeId', jwtValidate, async(req, res)=>{
     }, 
   })
 
-  return res.status(201).end();
+  return res.status(201).json({message: "이력서를 삭제하였습니다."});
 
 })
 
