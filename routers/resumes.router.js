@@ -1,7 +1,5 @@
 import express from 'express';
 import jwtValidate from '../middlewares/need-sign-in.middleware.js'
-import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
 import {PrismaClient} from '@prisma/client'; 
 
 const router = express.Router();
