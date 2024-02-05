@@ -13,7 +13,11 @@ const sha256 = cryptoJS.sha256;
 
 // 회원가입
 router.post('/sign-up', async (req, res) => {
-  const {email, clientId, password, passwordConfirm, name} = req.body;
+  const {email, clientId, password, passwordConfirm, name, grade} = req.body;
+  // 권한 부여
+  if(grade && ['NORMAL', 'ADMIN'].includes(grade)) {
+    return res.status(400).json({success: false, message: "등급이 올바르지 않습니다."})
+  }
 
   // kakao auth을 하지 않은 경우
   if(!clientId){
@@ -59,13 +63,14 @@ router.post('/sign-up', async (req, res) => {
       data: {
         clientId,
         name,
+        grade,
       }
     })
   } else {
     //email로 회원가입
     const user = await prisma.users.findFirst({
       where: {
-        email, 
+        email,
       }
     })
   
@@ -78,6 +83,7 @@ router.post('/sign-up', async (req, res) => {
         email,
         password: sha256(password).toString(), 
         name,
+        grade,
       }
     })
   }
