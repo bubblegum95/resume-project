@@ -151,6 +151,19 @@ router.patch('/:resumeId', jwtValidate, async (req, res)=>{
     })
   }
 
+  const resume = await prisma.resumes.findFirst({
+    where: {
+      resumeId: Number(resumeId),
+    }
+  });
+
+  if(!resume) {
+    return res.status(400).json({
+      success: false, 
+      message: '존재하지 않는 이력서입니다.'
+    })
+  }
+
   if((user.grade === 'NORMAL') && (user.userId !== resume.userId)) {
     return res.status(400).json({
       success: false, 
@@ -162,19 +175,6 @@ router.patch('/:resumeId', jwtValidate, async (req, res)=>{
     return res.status(400).json({
       success: false, 
       message: '이력서 상태가 유효하지 않습니다.'
-    })
-  }
-
-  const resume = await prisma.resumes.findFirst({
-    where: {
-      resumeId: Number(resumeId),
-    }
-  });
-
-  if(!resume) {
-    return res.status(400).json({
-      success: false, 
-      message: '존재하지 않는 이력서입니다.'
     })
   }
 
