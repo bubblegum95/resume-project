@@ -142,6 +142,7 @@ router.get('/me', jwtValidate, (req, res)=>{
   return res.json({
     email: user.email,
     name: user.name,
+    grade: user.grade,
   })
 })
 

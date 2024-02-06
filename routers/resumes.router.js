@@ -151,7 +151,7 @@ router.patch('/:resumeId', jwtValidate, async (req, res)=>{
     })
   }
 
-  if(user.grade !== 'NORMAL') {
+  if((user.grade === 'NORMAL') && (user.userId !== resume.userId)) {
     return res.status(400).json({
       success: false, 
       message: '수정 권한이 없습니다.'
