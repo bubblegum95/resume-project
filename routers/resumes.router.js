@@ -114,7 +114,7 @@ router.post('/', jwtValidate, async(req, res)=>{
     }
   })
 
-  return res.status(201).end();
+  return res.status(201).json({message: "이력서 작성을 완료하였습니다."});
 })
 
 // 이력서 수정 
